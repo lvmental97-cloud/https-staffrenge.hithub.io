@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>测测你的staff人格</title>
+<style>
+/* ===== 配色：背景 #FFF5F8 主色 #FFB6C1 辅助 #E6C8E8 文字 #332830 ===== */
+:root{--bg:#FFF5F8;--main:#FFB6C1;--sub:#E6C8E8;--ink:#332830}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);
+ font-family:"Yuanti SC","YouYuan","Varela Round","Nunito","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+ padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow-x:hidden}
+#app{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:7vh 20px 8vh;min-height:100vh}
+
+/* ===== CSS绘制的装饰：半透明爱心与星星，不拦截点击 ===== */
+.deco{position:fixed;z-index:0;pointer-events:none;opacity:.3;background:var(--main)}
+.star{clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.heart{background:none}
+.heart i{position:absolute;inset:0;background:var(--main);transform:rotate(-45deg)}
+.heart i::before,.heart i::after{content:"";position:absolute;width:100%;height:100%;border-radius:50%;background:var(--main)}
+.heart i::before{top:-50%;left:0}.heart i::after{left:50%;top:0}
+.d1{width:46px;height:46px;top:3%;left:6%;background:var(--sub)}
+.d2{width:26px;height:26px;top:8%;right:9%;transform:rotate(12deg)}
+.d3{width:36px;height:36px;bottom:12%;left:8%;background:var(--sub)}
+.d4{width:22px;height:22px;bottom:6%;right:10%}
+.d5{width:30px;height:30px;top:46%;right:3%;background:var(--sub)}
+
+/* ===== 通用组件 ===== */
+.page{animation:slideIn .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes slideIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+h1{font-size:clamp(34px,9vw,48px);line-height:1.25;margin:0 0 18px;color:var(--main);text-shadow:0 3px 0 var(--sub);text-align:center}
+.intro{text-align:center;font-size:19px;line-height:1.8;margin:0 0 36px}
+.btn{font:inherit;color:var(--ink);cursor:pointer;border-radius:28px;transition:transform .2s,box-shadow .2s,background .2s,border-color .2s}
+.btn:hover{transform:scale(1.04);box-shadow:0 8px 20px rgba(255,182,193,.5)}
+.btn:active{transform:scale(.98)}
+.main-btn{display:block;margin:0 auto;background:var(--main);border:none;font-size:22px;font-weight:700;padding:16px 46px}
+.main-btn:hover{background:#ffa7b5}
+
+/* ===== 答题页 ===== */
+.progress{display:flex;align-items:center;gap:12px;margin-bottom:22px;font-weight:700;color:#7a6070}
+.bar{flex:1;height:12px;background:#fff;border:2px solid var(--sub);border-radius:12px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--main);border-radius:12px;transition:width .5s}
+.q-title{font-size:22px;line-height:1.7;font-weight:700;margin:0 0 24px;background:#fff;border:2px solid var(--sub);border-radius:26px;padding:20px 22px}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid var(--sub);font-size:17px;line-height:1.7;padding:15px 20px;margin:0 0 14px}
+.opt:hover{border-color:var(--main)}
+.opt:active,.opt.on{background:var(--main);border-color:var(--main)}
+
+/* ===== 结果页：文字依次缓缓弹出 ===== */
+.res-tag{text-align:center;font-size:17px;color:#7a6070;margin:0 0 6px}
+.res-card{background:#fff;border:3px solid var(--sub);border-radius:34px;padding:28px 24px;margin:18px 0 30px}
+.pop{opacity:0;animation:pop .9s cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes pop{from{opacity:0;transform:translateY(18px) scale(.92)}to{opacity:1;transform:none}}
+.res-card p{font-size:18px;line-height:1.95;margin:0 0 12px}
+.res-card p:first-child{font-size:21px;font-weight:700}
+.sub-btn{display:block;margin:0 auto;background:#fff;border:2px solid var(--sub);font-size:18px;padding:13px 38px}
+.sub-btn:hover{background:var(--sub)}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<!-- 半透明装饰：星星与爱心 -->
+<div class="deco star d1"></div><div class="deco heart d2"><i></i></div>
+<div class="deco heart d3" style="background:none"><i style="background:var(--sub)"></i></div>
+<div class="deco star d4"></div><div class="deco star d5"></div>
+<div id="app"></div>
+
+<script>
+/* ===================== 题目数据（原文照录） ===================== */
+const questions = [
+{
+title: "1. 练习生练舞4小时后泄气摆烂，往地上一坐声称自己“不练了”",
+options: [
+{ text: "A.给他一脚顺带压力一波，告诉他队友练了5个小时", score: {S:3, H:0, R:1, L:0, F:0} },
+{ text: "B. 比他妈还心疼他，偷偷瞒着公司让他休息", score: {S:0, H:3, R:0, L:0, F:1} },
+{ text: "C. 理性拉着他复盘舞蹈中的错误，同时指出进步，比幼师还走心", score: {S:1, H:1, R:3, L:0, F:0} },
+{ text: "D. 爱练不练管我鸟事，出道又不会给我加工资", score: {S:0, H:0, R:0, L:2, F:3} }
+]
+},
+{
+title: "2. 两名练习生因为站位吵架，陷入冷战，粉丝都看出来了",
+options: [
+{ text: "A. 只守护心肝，训斥对方，要求对方道歉", score: {S:2, H:3, R:1, L:0, F:0} },
+{ text: "B. 一碗水端平，分别倾听少男心事，调解矛盾", score: {S:0, H:2, R:2, L:0, F:0} },
+{ text: "C. 按规则制度处理，警告他们再这样都停训回家", score: {S:3, H:0, R:3, L:0, F:0} },
+{ text: "D. 站在二人中间将他们的手拉在一起，告诉他们卖腐要有卖腐的样！时刻记住对方是自己的相方", score: {S:0, H:1, R:0, L:3, F:0} },
+{ text: "F. 放任自行和解，懒得管小孩子菜鸡互啄", score: {S:0, H:0, R:0, L:1, F:3} }
+]
+},
+{
+title: "3. 练习生小号吐槽队友和公司，被ss举报到公司",
+options: [
+{ text: "A. 捂着耳朵往前跑，反问ss是不是想被告", score: {S:0, H:3, R:0, L:2, F:0} },
+{ text: "B. 偷偷记下小号，自己视奸一波先", score: {S:0, H:0, R:0, L:3, F:2} },
+{ text: "C. 找到练习生，私下严厉警告，然后集中所有练习生一起教育，让他们互相猜忌是谁", score: {S:3, H:0, R:2, L:0, F:0} },
+{ text: "D. 对练习生进行心理疏导，教会他安全宣泄情绪，不忘问他跟队友到底发生什么了", score: {S:0, H:3, R:1, L:0, F:0} }
+]
+},
+{
+title: "4.有一个很好的外务机会，但要牺牲休息时间，练习生纠结要不要去",
+options: [
+{ text: "A. 为他打鸡血，语重心长地告诉他要抓住机会拼曝光", score: {S:3, H:2, R:1, L:0, F:0} },
+{ text: "B. 耐心询问他优先身体，为了他对抗公司安排", score: {S:0, H:3, R:1, L:0, F:0} },
+{ text: "D. 一脚踹上去，老娘这个无薪加班的都没说话呢，只是最后还是冷脸陪他们去", score: {S:3, H:1, R:0, L:0, F:0} },
+{ text: "F. 完全交由本人决定，他不去正好，自己可以休息", score: {S:0, H:1, R:0, L:1, F:3} }
+]
+},
+{
+title: "5. 彩排时高音连续翻车，练习生哑着嗓子崩溃落泪，无法再进行彩排",
+options: [
+{ text: "1. 彩排暂停，先陪他哭完，再给他点最爱喝的奶茶，直到他破涕为笑", score: {S:0, H:3, R:0, L:0, F:0} },
+{ text: "2. 自己大大方方高唱一首，揭开自己的伤疤逗他笑", score: {S:0, H:3, R:0, L:3, F:0} },
+{ text: "3. 找老师偷偷为他一对一加课，告诉他不要跟队友讲", score: {S:1, H:3, R:1, L:0, F:0} },
+{ text: "4. 严肃告诉他这是必经之路，让他一个人自己在角落里调整，调整好了再回去上课", score: {S:3, H:0, R:2, L:0, F:0} }, /* 原稿此处为 "R:2. L:0"（句点），为避免脚本报错已改为逗号，分值不变 */
+{ text: "5. 大大咧咧拍拍他的肩膀，问他那咋了", score: {S:0, H:0, R:0, L:3, F:0} }
+]
+},
+{
+title: "6. 物料中不小心剪进去对练习生不利的片段，比如说脏话，抠鼻屎，在网上引起轩然大波。",
+options: [
+{ text: "A. 对内约束警告该练习生，对外让公司对剪辑师进行培训教育，双管齐下", score: {S:3, H:1, R:3, L:0, F:0} },
+{ text: "B. 安抚练习生，称说脏话抠鼻屎乃人之常情，丝毫不减他的可爱", score: {S:0, H:3, R:0, L:1, F:1} },
+{ text: "C. 放任舆论自行降温，反正有粉丝会穿上军装，大不了多发布几个物料转移视线", score: {S:2, H:1, R:0, L:2, F:3} },
+{ text: "D. 表面义愤填膺，实则上厕所时偷偷在大眼保存黑子做的搞笑梗图狂笑", score: {S:0, H:0, R:0, L:3, F:2} }
+]
+},
+{
+title: "7. 练习生为了节食暗地里减重，出现头晕乏力等症状",
+options: [
+{ text: "A. 批评其极端节食的行为，冷脸教他更合理的管控自己体重", score: {S:2, H:2, R:0, L:0, F:0} },
+{ text: "C. 夸他做得好，有豆德，帮他制定更严格的减肥计划", score: {S:3, H:1, R:1, L:0, F:0} },
+{ text: "F. 不干预，只要没大病就行，同时心想他确实该减减肥了。", score: {S:1, H:0, R:1, L:3, F:2} },
+{ text: "B. 眼泪汪汪告诉他自己会心疼，瘦了，请多吃一点", score: {S:0, H:3, R:0, L:0, F:0} }
+]
+},
+{
+title: "8. 物料拍摄时，练习生因为紧张拘谨导致表情僵硬，看起来老了十岁",
+options: [
+{ text: "a. 主动玩梗，活跃气氛，逗笑他", score: {S:0, H:2, R:0, L:3, F:0} },
+{ text: "b. 答应他完成之后可以打游戏，让他想着这一点，露出真心的微笑", score: {S:0, H:3, R:1, L:2, F:0} },
+{ text: "c. 上压力，告诉他要对得起辛苦上一天班回家等着看物料回血的粉丝", score: {S:3, H:0, R:1, L:0, F:0} },
+{ text: "d. 轻声安慰，教他放松小技巧", score: {S:0, H:3, R:1, L:0, F:0} },
+{ text: "F. 凑合凑合呗，反正到时候会靠剪辑神之一手补救", score: {S:0, H:0, R:0, L:2, F:3} }
+]
+},
+{
+title: "9. 看到队友进步，练习生产生了自卑内耗心里",
+options: [
+{ text: "a. 趁机压力他一波大的，希望他可以化压力为动力", score: {S:3, H:0, R:1, L:0, F:0} },
+{ text: "b. 看在眼里疼在心里，偷偷施压他的对手，助心肝一臂之力", score: {S:0, H:3, R:0, L:1, F:0} },
+{ text: "c. 急着下班，于是告诉他无论如何会有人溺爱他的，让他别担心", score: {S:0, H:0, R:1, L:2, F:3} },
+{ text: "F. 认真告诉他这是正常竞争，习惯就好，淡然处之，自己也从小被压力到大", score: {S:0, H:2, R:0, L:0, F:3} }
+]
+},
+{
+title: "10. 答应好休息，临时通知紧急加练，练习生失落",
+options: [
+{ text: "A. 给他一脚，告诉他要得起跟着加班的自己", score: {S:3, H:0, R:0, L:0, F:0} },
+{ text: "B. 共情他的失落，先画一个大饼，承诺后续补假期", score: {S:0, H:2, R:1, L:0, F:2} },
+{ text: "C. 为他向公司据理力争，尝试争取保留休息", score: {S:0, H:3, R:0, L:0, F:0} },
+{ text: "d. 告诉他胳膊拧不过大腿，服从公司安排，劝他想开点，不过自己也忍不住为逝去的假期落泪", score: {S:0, H:0, R:0, L:1, F:3} }
+]
+}
+];
+
+/* ===================== 结局文案（原文照录） ===================== */
+const resultTexts = {
+S: {
+title: "铁血卷王",
+content: `只要练不死，就往死里练
+信奉“玉不琢不成器”，每天两眼一睁就是对接工作，发自内心地想陪着ta们走向更大的舞台
+不过更多时候是在冷脸为他们擦屁股而已。`
+},
+H: {
+title: "宝妈",
+content: `心肝掉一滴泪，我屠一座城
+虽然未婚未育，但内心的宝妈人格时常顶号
+认为心肝是世萌一，认为没人能忍住不为ta穿上军装
+成为staff不过是我保护我家太子太女的伪装罢了！`
+},
+R: {
+title: "清冷佛女",
+content: `在大润发杀了十年鱼的女人已经很冷酷惹！
+一个无情理性的工作机器，推崇公事公办，相信规则至上，任何风险都首先向公司汇报
+下班即关机，这个圈子的纷纷扰扰我鸟都不鸟
+只是时而会控制不住，对他人真情流露`
+},
+L: {
+title: "乐子人",
+content: `我狠起来连自己的梗都玩
+上班的目标是整活，吃瓜，看乐子！
+每天在橙色软件和绿色软件之间游荡，对练习生们的瓜如数家珍，常常忍不住匿名爆瓜，直到露出马脚被人认出是staff之一
+微信里全是玩梗表情包，注意不要不小心发到工作群聊里哦`
+},
+F: {
+title: "风干咸鱼",
+content: `每天勾心豆角不累吗？
+上班是为了下班，下班是为了躺平摆烂
+主打一个好孩子是天生的，因此全世界倒数第一会压力人的人，管理着的练习生向着发胖的终点一路狂奔
+每天练习单眼瞄准——对练习生的笑料与黑料睁一只眼闭一只眼`
+}
+};
+
+/* ===================== Web Audio 合成音效（无外部文件） ===================== */
+let actx = null;
+function ctx() { // 首次点击时创建/唤醒音频环境（浏览器要求用户手势）
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+  } catch (e) { actx = null; }
+  return actx;
+}
+// 播放一个音：频率、起始偏移、时长、波形、音量
+function tone(freq, start, dur, type, vol, slideTo) {
+  const a = ctx(); if (!a) return;
+  const t = a.currentTime + start, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function playClick() { tone(880, 0, 0.09, 'sine', 0.18, 1320); }                 // 短促点击
+function playPageFlip() {                                                         // 翻页：下滑的轻“唰”
+  tone(520, 0, 0.18, 'triangle', 0.1, 220);
+  tone(300, 0.06, 0.16, 'sine', 0.07, 160);
+}
+function playResult() {                                                           // 结算：上行琶音播报
+  [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.35, 'sine', 0.16));
+  tone(1319, 0.55, 0.6, 'triangle', 0.12);
+}
+
+/* ===================== 游戏逻辑 ===================== */
+const app = document.getElementById('app');
+let scores, cur, locked;
+
+function show(html) { app.innerHTML = '<div class="page">' + html + '</div>'; window.scrollTo(0, 0); }
+
+function startPage() {
+  scores = {S:0, H:0, R:0, L:0, F:0}; cur = 0; locked = false;
+  show(`<div style="padding-top:12vh"><h1>测测你的staff人格</h1>
+    <p class="intro">你再牛能忍住不代入一波？</p>
+    <button class="btn main-btn" id="go">开始测试</button></div>`);
+  document.getElementById('go').onclick = () => { playClick(); renderQuestion(); };
+}
+
+function renderQuestion() {
+  const q = questions[cur];
+  show(`<div class="progress"><span>${cur + 1} / ${questions.length}</span><div class="bar"><b style="width:${(cur / questions.length) * 100}%"></b></div></div>
+    <h2 class="q-title"></h2><div id="opts"></div>`);
+  app.querySelector('.q-title').textContent = q.title;
+  const box = document.getElementById('opts');
+  q.options.forEach(op => {
+    const b = document.createElement('button');
+    b.className = 'btn opt'; b.textContent = op.text;
+    b.onclick = () => choose(op, b);
+    box.appendChild(b);
+  });
+  requestAnimationFrame(() => { const f = app.querySelector('.bar b'); if (f) f.style.width = ((cur + 1) / questions.length) * 100 + '%'; });
+}
+
+function choose(op, btn) {
+  if (locked) return; locked = true;
+  btn.classList.add('on'); playClick();
+  for (const k in op.score) scores[k] += op.score[k];        // 累加五维分数
+  setTimeout(() => {
+    cur++;
+    if (cur < questions.length) { playPageFlip(); renderQuestion(); locked = false; }
+    else { playPageFlip(); setTimeout(showResult, 250); }
+  }, 280);
+}
+
+function showResult() {
+  const max = Math.max(...Object.values(scores));
+  const tops = Object.keys(scores).filter(k => scores[k] === max);
+  const key = tops[Math.floor(Math.random() * tops.length)];   // 同分随机取一个
+  const r = resultTexts[key];
+  show(`<p class="res-tag">你的staff人格是</p><h1></h1><div class="res-card" id="card"></div>
+    <button class="btn sub-btn" id="again">重新测试</button>`);
+  app.querySelector('h1').textContent = r.title;
+  const card = document.getElementById('card');
+  r.content.split('\n').forEach((line, i) => {            // 逐行缓缓弹出
+    const p = document.createElement('p'); p.className = 'pop'; p.textContent = line;
+    p.style.animationDelay = (0.3 + i * 0.7) + 's'; card.appendChild(p);
+  });
+  playResult();
+  document.getElementById('again').onclick = () => { playClick(); startPage(); }; // 重置分数
+}
+
+startPage();
+</script>
+</body>
+</html>
